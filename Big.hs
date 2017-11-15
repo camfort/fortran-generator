@@ -9,6 +9,14 @@ import Language.Fortran.PrettyPrint as FPP
 import Text.PrettyPrint (render)
 import System.Environment (getArgs)
 
+-- Compile with:
+--  ghc Big.hs -o big
+
+-- Example usage:
+--  ./big Separate big 5 5 1
+-- Generates big.f90 as the top-level and big1.f90..big5.f90 which each
+-- contain a function in a module, of length 5, with one argument each
+
 main :: IO ()
 main = do
   args <- getArgs
