@@ -12,28 +12,56 @@ import System.Environment (getArgs)
 main :: IO ()
 main = do
   args <- getArgs
-  if length args < 4
-    then putStrLn "Usage: big <fileName> <numOfFunctions> <lengthOfFunction> <numOfFunArgs>"
+  if length args < 5
+    then putStrLn "Usage: big Separate|Whole <name> <numOfFunctions> <lengthOfFunction> <numOfFunArgs>"
     else do
-      let (name : funs : funLength : funArgs : _) = args
+      let (mode : name : funs : funLength : funArgs : _) = args
       if (read funArgs :: Int) > read funLength
         then putStrLn "Number of function args should be less than the function length."
         else do
-         let p = programStub  name (read funs) (read funLength) (read funArgs)
-         let sourceText = pprint FP.Fortran90 p Nothing
-         writeFile (name ++ ".f90") (render sourceText)
+         let ps = programStub (read mode) name (read funs) (read funLength) (read funArgs)
+         mapM_ outputFile ps
+  where
+    outputFile (name, p) = do
+      let sourceText = pprint FP.Fortran90 p Nothing
+      writeFile (name ++ ".f90") (render sourceText)
 
-{- | `programStub name f l a` generates a Fortran AST named `name`
+data Mode = Separate | Whole deriving Read
+
+{- | `programStub mode name f l a` generates a Fortran AST named `name`
       with `f` functions with `l` assignments in each and `a` arguments in each -}
 
-programStub :: String -> Int -> Int -> Int -> F.ProgramFile ()
-programStub name funs funLength funArgs =
-    F.ProgramFile meta units
+programStub :: Mode -> String -> Int -> Int -> Int -> [(String, F.ProgramFile ())]
+-- Generate a single program
+programStub Whole name funs funLength funArgs =
+    [(name, F.ProgramFile meta [unit])]
   where
-    meta     = F.MetaInfo FP.Fortran90 filename
-    filename = name ++ ".f90"
+    unit  = F.PUMain () nullSpan (Just name) [] (Just units)
     units = map (function funArgs) (partition [1..funs*funLength] funs)
-      -- F.PUMain () nullSpan (Just name) (decls ++ blocks) Nothing
+    meta  = F.MetaInfo FP.Fortran90 (name ++ ".f90")
+-- Generate separate modules
+programStub Separate name funs funLength funArgs =
+    topLevel : zipWith mkModule [1..funs] units
+  where
+    topLevel = (name, F.ProgramFile meta [topUnit])
+    meta  = F.MetaInfo FP.Fortran90 (name ++ ".f90")
+
+    topUnit = F.PUMain () nullSpan (Just name) uses Nothing
+    uses = map mkUse [1..funs]
+
+    mkUse n =
+      F.BlStatement () nullSpan Nothing
+        $ F.StUse () nullSpan (variableStr (name ++ show n)) F.Permissive Nothing
+
+    units = map (function funArgs) (partition [1..funs*funLength] funs)
+    mkModule n unit
+      = (name', F.ProgramFile meta' [pmod])
+         where
+          pmod  = F.PUModule () nullSpan name' [] (Just [unit])
+          name' = name ++ show n
+          meta'  = F.MetaInfo FP.Fortran90 (name' ++ ".f90")
+
+
 
 function :: Int -> [Int] -> F.ProgramUnit ()
 function numArgs ids =
@@ -51,9 +79,7 @@ function numArgs ids =
     blocks = map block (drop numArgs ids)
     -- Return statement
     returnStmt = F.BlStatement () nullSpan Nothing
-      $ F.StExpressionAssign () nullSpan
-          (F.ExpValue () nullSpan $ F.ValVariable name)
-          (variable (last ids))
+      $ F.StExpressionAssign () nullSpan (variableStr name) (variable (last ids))
 
 {- | `block n` generate a statement (block) for variable `n` -}
 block :: Int -> F.Block ()
@@ -67,7 +93,10 @@ block n =
      e2 = variable (n - 2)
 
 variable :: Int -> F.Expression ()
-variable x = F.ExpValue () nullSpan (F.ValVariable $ "v" ++ show x)
+variable x = variableStr $ "v" ++ show x
+
+variableStr :: String -> F.Expression ()
+variableStr x = F.ExpValue () nullSpan (F.ValVariable x)
 
 declaration :: Int -> F.Block ()
 declaration n =
