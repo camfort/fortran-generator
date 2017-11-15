@@ -13,7 +13,7 @@ import System.Environment (getArgs)
 --  ghc Big.hs -o big
 
 -- Example usage:
---  ./big Separate big 5 5 1
+--  ./big separate big 5 5 1
 -- Generates big.f90 as the top-level and big1.f90..big5.f90 which each
 -- contain a function in a module, of length 5, with one argument each
 
@@ -21,61 +21,75 @@ main :: IO ()
 main = do
   args <- getArgs
   if length args < 5
-    then putStrLn "Usage: big Separate|Whole <name> <numOfFunctions> <lengthOfFunction> <numOfFunArgs>"
+    then putStrLn "Usage: big separate|whole <name> <numOfFunctions> <lengthOfFunction> <numOfFunArgs>"
     else do
       let (mode : name : funs : funLength : funArgs : _) = args
       if (read funArgs :: Int) > read funLength
         then putStrLn "Number of function args should be less than the function length."
         else do
-         let ps = programStub (read mode) name (read funs) (read funLength) (read funArgs)
+         let ps = programs mode name (read funs) (read funLength) (read funArgs)
          mapM_ outputFile ps
   where
     outputFile (name, p) = do
       let sourceText = pprint FP.Fortran90 p Nothing
       writeFile (name ++ ".f90") (render sourceText)
 
-data Mode = Separate | Whole deriving Read
-
 {- | `programStub mode name f l a` generates a Fortran AST named `name`
       with `f` functions with `l` assignments in each and `a` arguments in each -}
 
-programStub :: Mode -> String -> Int -> Int -> Int -> [(String, F.ProgramFile ())]
+programs :: String -> String -> Int -> Int -> Int -> [(String, F.ProgramFile ())]
+
 -- Generate a single program
-programStub Whole name funs funLength funArgs =
+programs "whole" name funs funLength funArgs =
     [(name, F.ProgramFile meta [unit])]
   where
-    unit  = F.PUMain () nullSpan (Just name) [] (Just units)
-    units = map (function funArgs) (partition [1..funs*funLength] funs)
+    unit  = F.PUMain () nullSpan (Just name) (mainProgram funs funArgs) (Just units)
+    units = zipWith (function funArgs) [1..funs] (partition [1..funs*funLength] funLength)
     meta  = F.MetaInfo FP.Fortran90 (name ++ ".f90")
+
 -- Generate separate modules
-programStub Separate name funs funLength funArgs =
+programs "separate" name funs funLength funArgs =
     topLevel : zipWith mkModule [1..funs] units
   where
     topLevel = (name, F.ProgramFile meta [topUnit])
     meta  = F.MetaInfo FP.Fortran90 (name ++ ".f90")
 
-    topUnit = F.PUMain () nullSpan (Just name) uses Nothing
+    topUnit = F.PUMain () nullSpan (Just name) (uses ++ mainProgram funs funArgs) Nothing
     uses = map mkUse [1..funs]
 
     mkUse n =
       F.BlStatement () nullSpan Nothing
         $ F.StUse () nullSpan (variableStr (name ++ show n)) F.Permissive Nothing
 
-    units = map (function funArgs) (partition [1..funs*funLength] funs)
+    units = zipWith (function funArgs) [1..funs] (partition [1..funs*funLength] funLength)
     mkModule n unit
       = (name', F.ProgramFile meta' [pmod])
          where
           pmod  = F.PUModule () nullSpan name' [] (Just [unit])
           name' = name ++ show n
           meta'  = F.MetaInfo FP.Fortran90 (name' ++ ".f90")
+programs _ _ _ _ _ = error "Unknown mode"
 
+{- | `mainProgram n k` generates a sequence of blocks (for a program) which
+      comprise function calls to functions f1..fn of k-arity with a shared
+      result variable but with separate argument variables -}
+mainProgram :: Int -> Int -> [F.Block ()]
+mainProgram funs funArgs = typeDecls ++ calls
+   where
+     typeDecls = map declaration [0..funs*funArgs]
+     calls     = zipWith mkCalls [1..funs] (partition [1..funs*funArgs] funArgs)
+     mkCalls n args =
+       F.BlStatement () nullSpan Nothing
+         $ F.StExpressionAssign () nullSpan (variable 0)
+          $ F.ExpFunctionCall () nullSpan (variableStr $ "f" ++ show n)
+           $ Just (F.fromList () (map (toArgument . variable) args))
+     toArgument = F.Argument () nullSpan Nothing
 
-
-function :: Int -> [Int] -> F.ProgramUnit ()
-function numArgs ids =
+function :: Int -> Int -> [Int] -> F.ProgramUnit ()
+function  numArgs funNumber ids =
     F.PUFunction () nullSpan (Just realType) opts name args Nothing body Nothing
   where
-    name = "f" ++ concatMap show ids
+    name = "f" ++ show funNumber
     opts = F.None () nullSpan False
     -- Arugments of the function
     args = Just (F.fromList () (map variable (take numArgs ids)))
