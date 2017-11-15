@@ -1,6 +1,6 @@
 -- Generates large Fortran files with lots of affine statements
 
-module Main where
+module Big.Big where
 
 import Language.Fortran.AST as F
 import Language.Fortran.ParserMonad as FP
@@ -26,13 +26,16 @@ main = do
       let (mode : name : funs : funLength : funArgs : _) = args
       if (read funArgs :: Int) > read funLength
         then putStrLn "Number of function args should be less than the function length."
-        else do
-         let ps = programs mode name (read funs) (read funLength) (read funArgs)
-         mapM_ outputFile ps
+        else bigSynthesise mode name (read funs) (read funLength) (read funArgs)
+
+bigSynthesise :: String -> String -> Int -> Int -> Int -> IO ()
+bigSynthesise mode name funs funLength funArgs =
+   mapM_ outputFile (programs mode name funs funLength funArgs)
   where
-    outputFile (name, p) = do
+    outputFile (name', p) = do
       let sourceText = pprint FP.Fortran90 p Nothing
-      writeFile (name ++ ".f90") (render sourceText)
+      writeFile (name' ++ ".f90") (render sourceText)
+
 
 {- | `programStub mode name f l a` generates a Fortran AST named `name`
       with `f` functions with `l` assignments in each and `a` arguments in each -}
@@ -66,7 +69,7 @@ programs "separate" name funs funLength funArgs =
       = (name', F.ProgramFile meta' [pmod])
          where
           pmod  = F.PUModule () nullSpan name' [] (Just [unit])
-          name' = name ++ show n
+          name' = "mod_" ++ name ++ show n
           meta'  = F.MetaInfo FP.Fortran90 (name' ++ ".f90")
 programs _ _ _ _ _ = error "Unknown mode"
 
