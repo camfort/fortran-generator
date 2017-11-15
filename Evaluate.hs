@@ -5,7 +5,7 @@ module Main where
 import System.Process (system)
 import System.Directory (listDirectory, removeFile)
 import Big.Big hiding (main)
-import Control.Monad (forM_, forM)
+import Control.Monad (forM_, forM, replicateM)
 import Data.List (isPrefixOf, unwords)
 import System.Clock
 import Text.Printf
@@ -46,11 +46,14 @@ main = do
       reportLine funs funLen funArgs timeWhole (timeSep + modCompileTime)
 
 timeProcess :: String -> [String] -> IO Float
-timeProcess c args = do
-  start <- getTime Realtime
-  _     <- system (c ++ " " ++ unwords args ++ " 1>/dev/null 2>/dev/null")
-  end   <- getTime Realtime
-  return $ fromIntegral (nsec (end - start)) / (10^(8 :: Integer))
+timeProcess c args =
+   replicateM 3 timing >>= (\times -> return $ sum times / 3.0)
+  where
+   timing = do
+     start <- getTime Realtime
+     _     <- system (c ++ " " ++ unwords args ++ " 1>/dev/null 2>/dev/null")
+     end   <- getTime Realtime
+     return $ fromIntegral (nsec (end - start)) / (10^(8 :: Integer))
 
 reportLine :: Int -> Int -> Int -> Float -> Float -> IO ()
 reportLine = printf "%2d      %2d        %2d      %3.3f   %3.3f\n"
