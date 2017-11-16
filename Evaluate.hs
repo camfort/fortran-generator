@@ -16,7 +16,7 @@ main = do
   putStrLn "#funs   #funLen   #args   single   multi"
   forM_ [10,20..40] $ \funs ->
    forM_ [10,20..40] $ \funLen ->
-    forM_ [5,10..20] $ \funArgs -> do
+    forM_ [2,4..8] $ \funArgs -> do
       -- 1. Synthesise the whole program...
       bigSynthesise "whole" "big" funs funLen funArgs
       -- ... infer its units, recording the time
