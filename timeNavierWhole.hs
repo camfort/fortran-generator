@@ -7,7 +7,7 @@ import System.Clock
 main :: IO ()
 main = do
   -- Header
-  file1 <- timeProcess "camfort" ["units-compile", "navierWhole.f90"]
+  file1 <- timeProcess "camfort" ["units-infer", "navierWhole.f90"]
   putStrLn (show $ file1)
 
 timeProcess :: String -> [String] -> IO Double
