@@ -54,6 +54,6 @@ timeProcess c args =
   where
    timing = do
      start <- getTime ThreadCPUTime
-     _     <- system (c ++ " " ++ unwords args ++ " 1>&2")
+     _     <- system (c ++ " " ++ unwords args ++ " >> log 2>&1")
      end   <- getTime ThreadCPUTime
      return $ fromIntegral (toNanoSecs end - toNanoSecs start) / (10^(9 :: Integer))
