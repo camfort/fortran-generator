@@ -16,7 +16,7 @@ main = do
   putStrLn "#funs   #funLen   #args   single   multi"
   forM_ [2,4..8] $ \funArgs ->
    forM_ [5,10..30] $ \funs ->
-    forM_ [5,10..30] $ \funLen -> do
+    forM_ [5,10..25] $ \funLen -> do
 
       -- 1. Synthesise the whole program...
       bigSynthesise "whole" "big" funs funLen funArgs
