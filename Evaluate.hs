@@ -31,7 +31,7 @@ main = do
       items <- listDirectory "."
       modTimes <-
         forM (filter ("mod_" `isPrefixOf`) items) $ \modFile ->
-          timeProcess "camfort" ["units-compile", modFile, modFile]
+          timeProcess "camfort" ["units-compile", modFile]
 
       -- Calculate the total and mean time to compile the mod files
       let modCompileTime = sum modTimes
