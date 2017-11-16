@@ -57,7 +57,8 @@ programs mode name funs funLength funArgs =
     topLevel u = F.ProgramFile meta [u]
     meta       = F.MetaInfo FP.Fortran90 (name ++ ".f90")
     -- contains   = F.PUMain () nullSpan (Just name)
-    contains   = F.PUSubroutine () nullSpan (F.None () nullSpan False) name Nothing
+    contains   = F.PUSubroutine () nullSpan (F.None () nullSpan False) name (Just args)
+    args       = F.fromList () (map variable [0..funs])
     mainP      = mainProgram funs funArgs
 
 mkModule :: String -> Int -> F.ProgramUnit () -> (String, F.ProgramFile ())
