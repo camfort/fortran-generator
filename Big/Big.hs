@@ -41,37 +41,36 @@ bigSynthesise mode name funs funLength funArgs
       with `f` functions with `l` assignments in each and `a` arguments in each -}
 
 programs :: String -> String -> Int -> Int -> Int -> [(String, F.ProgramFile ())]
-
 -- Generate a single program
-programs "whole" name funs funLength funArgs =
-    [(name, F.ProgramFile meta [unit])]
+programs mode name funs funLength funArgs =
+    case mode of
+       "whole" ->
+             [(name, topLevel (mainP `contains` Just units))]
+       "separate" ->
+         let uses = map (mkUse name) [1..funs]
+         in   (name, topLevel ((uses ++ mainP) `contains` Nothing))
+           : zipWith (mkModule name) [1..funs] units
+
+       _ -> error "Mode not supported, use either: whole or separate"
   where
-    unit  = F.PUMain () nullSpan (Just name) (mainProgram funs funArgs) (Just units)
-    units = zipWith (function funArgs) [1..funs] (partition [1..funs*funLength] funLength)
-    meta  = F.MetaInfo FP.Fortran90 (name ++ ".f90")
+    units       = zipWith (function funArgs) [1..funs] (partition [1..funs*funLength] funLength)
+    topLevel   u = F.ProgramFile meta [u]
+    meta        = F.MetaInfo FP.Fortran90 (name ++ ".f90")
+    contains    = F.PUMain () nullSpan (Just name)
+    mainP       = mainProgram funs funArgs
 
--- Generate separate modules
-programs "separate" name funs funLength funArgs =
-    topLevel : zipWith mkModule [1..funs] units
-  where
-    topLevel = (name, F.ProgramFile meta [topUnit])
-    meta  = F.MetaInfo FP.Fortran90 (name ++ ".f90")
+mkModule :: String -> Int -> F.ProgramUnit () -> (String, F.ProgramFile ())
+mkModule name n unit
+  = ("mod_" ++ name', F.ProgramFile meta' [pmod])
+     where
+      pmod  = F.PUModule () nullSpan name' [] (Just [unit])
+      name' = name ++ show n
+      meta'  = F.MetaInfo FP.Fortran90 (name' ++ ".f90")
 
-    topUnit = F.PUMain () nullSpan (Just name) (uses ++ mainProgram funs funArgs) Nothing
-    uses = map mkUse [1..funs]
-
-    mkUse n =
-      F.BlStatement () nullSpan Nothing
-        $ F.StUse () nullSpan (variableStr (name ++ show n)) F.Permissive Nothing
-
-    units = zipWith (function funArgs) [1..funs] (partition [1..funs*funLength] funLength)
-    mkModule n unit
-      = ("mod_" ++ name', F.ProgramFile meta' [pmod])
-         where
-          pmod  = F.PUModule () nullSpan name' [] (Just [unit])
-          name' = name ++ show n
-          meta'  = F.MetaInfo FP.Fortran90 (name' ++ ".f90")
-programs _ _ _ _ _ = error "Unknown mode"
+mkUse :: String -> Int -> F.Block ()
+mkUse name n =
+  F.BlStatement () nullSpan Nothing
+    $ F.StUse () nullSpan (variableStr (name ++ show n)) F.Permissive Nothing
 
 {- | `mainProgram n k` generates a sequence of blocks (for a program) which
       comprise function calls to functions f1..fn of k-arity with a shared
