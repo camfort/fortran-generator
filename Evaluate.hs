@@ -7,7 +7,7 @@ import System.Directory (listDirectory, removeFile)
 import Big.Big hiding (main)
 import Control.Monad (forM_, forM, replicateM)
 import Data.List (isPrefixOf, unwords)
-import System.CPUTime
+import System.Clock
 import Text.Printf
 
 main :: IO ()
@@ -50,10 +50,10 @@ timeProcess c args =
    replicateM 3 timing >>= (\times -> return $ sum times / 3.0)
   where
    timing = do
-     start <- getCPUTime
+     start <- getTime ThreadCPUTime
      _     <- system (c ++ " " ++ unwords args ++ " 1>/dev/null 2>/dev/null")
-     end   <- getCPUTime
-     return $ fromIntegral (end - start) / (10^(12 :: Integer))
+     end   <- getTime ThreadCPUTime
+     return $ fromIntegral (toNanoSecs end - toNanoSecs start) / (10^(12 :: Integer))
 
 reportLine :: Int -> Int -> Int -> Float -> Float -> IO ()
 reportLine = printf "%2d      %2d        %2d      %3.3f   %3.3f\n"
