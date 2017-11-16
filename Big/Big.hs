@@ -101,7 +101,7 @@ function  numArgs funNumber ids =
     -- Type declarations
     decls = map declaration ids
     -- Statements for the body
-    blocks = map block (drop numArgs ids)
+    blocks = map block ids
     -- Return statement
     returnStmt = F.BlStatement () nullSpan Nothing
       $ F.StExpressionAssign () nullSpan (variableStr name) (variable (last ids))
