@@ -24,17 +24,17 @@ main = do
     then putStrLn "Usage: big separate|whole <name> <numOfFunctions> <lengthOfFunction> <numOfFunArgs>"
     else do
       let (mode : name : funs : funLength : funArgs : _) = args
-      if (read funArgs :: Int) > read funLength
-        then putStrLn "Number of function args should be less than the function length."
-        else bigSynthesise mode name (read funs) (read funLength) (read funArgs)
+      bigSynthesise mode name (read funs) (read funLength) (read funArgs)
 
 bigSynthesise :: String -> String -> Int -> Int -> Int -> IO ()
-bigSynthesise mode name funs funLength funArgs =
-   mapM_ outputFile (programs mode name funs funLength funArgs)
-  where
-    outputFile (name', p) = do
-      let sourceText = pprint FP.Fortran90 p Nothing
-      writeFile (name' ++ ".f90") (render sourceText)
+bigSynthesise mode name funs funLength funArgs
+ | funLength < 2 = putStrLn "Length of a function should be at least 2"
+ | funArgs > funLength = putStrLn "Number of function args should be less than the function length."
+ | otherwise = mapM_ outputFile (programs mode name funs funLength funArgs)
+    where
+      outputFile (name', p) = do
+        let sourceText = pprint FP.Fortran90 p Nothing
+        writeFile (name' ++ ".f90") (render sourceText)
 
 
 {- | `programStub mode name f l a` generates a Fortran AST named `name`
@@ -101,7 +101,7 @@ function  numArgs funNumber ids =
     -- Type declarations
     decls = map declaration ids
     -- Statements for the body
-    blocks = map block ids
+    blocks = map block (drop 2 ids)
     -- Return statement
     returnStmt = F.BlStatement () nullSpan Nothing
       $ F.StExpressionAssign () nullSpan (variableStr name) (variable (last ids))
