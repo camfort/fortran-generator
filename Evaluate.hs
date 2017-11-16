@@ -17,7 +17,6 @@ main = do
   forM_ [2,4..8] $ \funArgs ->
    forM_ [10,20..40] $ \funs ->
     forM_ [10,20..40] $ \funLen -> do
-      printf "%2d      %2d        %2d      " funs funLen funArgs
 
       -- 1. Synthesise the whole program...
       bigSynthesise "whole" "big" funs funLen funArgs
@@ -25,7 +24,6 @@ main = do
       timeWhole <- timeProcess "camfort" ["units-infer", "big.f90"]
       -- cleanup
       removeFile "big.f90"
-      printf "%0.3f   " timeWhole
 
       -- 2. Synthesis separate programs...
       bigSynthesise "separate" "big" funs funLen funArgs
@@ -46,7 +44,8 @@ main = do
           removeFile modFile
 
       -- Report
-      printf "%0.3f\n" (timeSep + modCompileTime)
+      printf "%2d      %2d        %2d      %0.3f   %0.3f\n"
+              funs     funLen     funArgs  timeWhole (timeSep + modCompileTime)
 
 timeProcess :: String -> [String] -> IO Float
 timeProcess c args =
@@ -54,6 +53,6 @@ timeProcess c args =
   where
    timing = do
      start <- getTime ThreadCPUTime
-     _     <- system (c ++ " " ++ unwords args ++ " 1>/dev/null 2>/dev/null")
+     _     <- system (c ++ " " ++ unwords args ++ " 1>&2")
      end   <- getTime ThreadCPUTime
      return $ fromIntegral (toNanoSecs end - toNanoSecs start) / (10^(9 :: Integer))
