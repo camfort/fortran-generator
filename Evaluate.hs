@@ -47,12 +47,12 @@ main = do
       printf "%2d      %2d        %2d      %0.3f   %0.3f\n"
               funs     funLen     funArgs  timeWhole (timeSep + modCompileTime)
 
-timeProcess :: String -> [String] -> IO Float
+timeProcess :: String -> [String] -> IO Double
 timeProcess c args =
    replicateM 3 timing >>= (\times -> return $ sum times / 3.0)
   where
    timing = do
-     start <- getTime ThreadCPUTime
-     _     <- system (c ++ " " ++ unwords args ++ " >> log 2>&1")
-     end   <- getTime ThreadCPUTime
-     return $ fromIntegral (toNanoSecs end - toNanoSecs start) / (10^(9 :: Integer))
+     start <- getTime Monotonic
+     _     <- system ("/usr/bin/time " ++ c ++ " " ++ unwords args ++ " >> log 2>&1")
+     end   <- getTime Monotonic
+     return $ fromIntegral (toNanoSecs (diffTimeSpec end start)) / (10^(9 :: Integer)::Double)
