@@ -53,7 +53,7 @@ timeProcess c args =
      start <- getTime ThreadCPUTime
      _     <- system (c ++ " " ++ unwords args ++ " 1>/dev/null 2>/dev/null")
      end   <- getTime ThreadCPUTime
-     return $ fromIntegral (toNanoSecs end - toNanoSecs start) / (10^(12 :: Integer))
+     return $ fromIntegral (toNanoSecs end - toNanoSecs start) / (10^(9 :: Integer))
 
 reportLine :: Int -> Int -> Int -> Float -> Float -> IO ()
-reportLine = printf "%2d      %2d        %2d      %3.3f   %3.3f\n"
+reportLine = printf "%2d      %2d        %2d      %0.3f   %0.3f\n"
