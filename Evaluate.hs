@@ -17,12 +17,15 @@ main = do
   forM_ [2,4..8] $ \funArgs ->
    forM_ [10,20..40] $ \funs ->
     forM_ [10,20..40] $ \funLen -> do
+      printf "%2d      %2d        %2d      " funs funLen funArgs
+
       -- 1. Synthesise the whole program...
       bigSynthesise "whole" "big" funs funLen funArgs
       -- ... infer its units, recording the time
       timeWhole <- timeProcess "camfort" ["units-infer", "big.f90"]
       -- cleanup
       removeFile "big.f90"
+      printf "%0.3f   " timeWhole
 
       -- 2. Synthesis separate programs...
       bigSynthesise "separate" "big" funs funLen funArgs
@@ -43,7 +46,7 @@ main = do
           removeFile modFile
 
       -- Report
-      reportLine funs funLen funArgs timeWhole (timeSep + modCompileTime)
+      printf "%0.3f" (timeSep + modCompileTime)
 
 timeProcess :: String -> [String] -> IO Float
 timeProcess c args =
@@ -54,6 +57,3 @@ timeProcess c args =
      _     <- system (c ++ " " ++ unwords args ++ " 1>/dev/null 2>/dev/null")
      end   <- getTime ThreadCPUTime
      return $ fromIntegral (toNanoSecs end - toNanoSecs start) / (10^(9 :: Integer))
-
-reportLine :: Int -> Int -> Int -> Float -> Float -> IO ()
-reportLine = printf "%2d      %2d        %2d      %0.3f   %0.3f\n"
