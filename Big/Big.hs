@@ -53,11 +53,12 @@ programs mode name funs funLength funArgs =
 
        _ -> error "Mode not supported, use either: whole or separate"
   where
-    units       = zipWith (function funArgs) [1..funs] (partition [1..funs*funLength] funLength)
-    topLevel   u = F.ProgramFile meta [u]
-    meta        = F.MetaInfo FP.Fortran90 (name ++ ".f90")
-    contains    = F.PUMain () nullSpan (Just name)
-    mainP       = mainProgram funs funArgs
+    units      = zipWith (function funArgs) [1..funs] (partition [1..funs*funLength] funLength)
+    topLevel u = F.ProgramFile meta [u]
+    meta       = F.MetaInfo FP.Fortran90 (name ++ ".f90")
+    -- contains   = F.PUMain () nullSpan (Just name)
+    contains   = F.PUSubroutine () nullSpan (F.None () nullSpan False) name Nothing
+    mainP      = mainProgram funs funArgs
 
 mkModule :: String -> Int -> F.ProgramUnit () -> (String, F.ProgramFile ())
 mkModule name n unit
