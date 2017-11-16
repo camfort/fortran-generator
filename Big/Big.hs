@@ -66,10 +66,10 @@ programs "separate" name funs funLength funArgs =
 
     units = zipWith (function funArgs) [1..funs] (partition [1..funs*funLength] funLength)
     mkModule n unit
-      = (name', F.ProgramFile meta' [pmod])
+      = ("mod_" ++ name', F.ProgramFile meta' [pmod])
          where
           pmod  = F.PUModule () nullSpan name' [] (Just [unit])
-          name' = "mod_" ++ name ++ show n
+          name' = name ++ show n
           meta'  = F.MetaInfo FP.Fortran90 (name' ++ ".f90")
 programs _ _ _ _ _ = error "Unknown mode"
 
