@@ -21,6 +21,6 @@ timeProcess c args =
   where
    timing = do
      start <- getTime Monotonic
-     _     <- system ("/usr/bin/time " ++ c ++ " " ++ unwords args ++ " >> log 2>&1")
+     _     <- system (c ++ " " ++ unwords args ++ " >> log 2>&1")
      end   <- getTime Monotonic
      return $ fromIntegral (toNanoSecs (diffTimeSpec end start)) / (10^(9 :: Integer)::Double)
