@@ -46,7 +46,7 @@ main = do
           removeFile modFile
 
       -- Report
-      printf "%0.3f" (timeSep + modCompileTime)
+      printf "%0.3f\n" (timeSep + modCompileTime)
 
 timeProcess :: String -> [String] -> IO Float
 timeProcess c args =
