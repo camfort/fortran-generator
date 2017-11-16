@@ -6,7 +6,7 @@ import System.Process (system)
 import System.Directory (listDirectory, removeFile)
 import Big.Big hiding (main)
 import Control.Monad (forM_, forM, replicateM)
-import Data.List (isPrefixOf, unwords)
+import Data.List (isPrefixOf, isSuffixOf, unwords)
 import System.Clock
 import Text.Printf
 
@@ -40,8 +40,9 @@ main = do
       timeSep <- timeProcess "camfort" ["units-infer", "big.f90", "-I ."]
       -- cleanup
       removeFile "big.f90"
-      forM_ (filter ("mod_" `isPrefixOf`) items) $ \modFile ->
-          removeFile modFile
+      forM_ (filter ("mod_" `isPrefixOf`) items) removeFile
+      items <- listDirectory "."
+      forM_ (filter ("fsmod" `isSuffixOf`) items) removeFile
 
       -- Report
       printf "%2d      %2d        %2d      %0.3f   %0.3f\n"
