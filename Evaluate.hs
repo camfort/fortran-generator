@@ -15,7 +15,7 @@ main = do
   -- Header
   putStrLn "#funs   #funLen   #args   single   multi"
   forM_ [2,4..8] $ \funArgs ->
-   forM_ [10,20..40] $ \funs ->
+   forM_ [10,15..30] $ \funs ->
     forM_ [5,10..30] $ \funLen -> do
 
       -- 1. Synthesise the whole program...
@@ -32,10 +32,9 @@ main = do
       modTimes <-
         forM (filter ("mod_" `isPrefixOf`) items) $ \modFile ->
           timeProcess "camfort" ["units-compile", modFile]
-
-      -- Calculate the total and mean time to compile the mod files
+      -- Calculate the total time to compile the mod files
       let modCompileTime = sum modTimes
-      --let meanModCompileTime = modTimes / funs
+
       -- ... infer the units for the whole file
       timeSep <- timeProcess "camfort" ["units-infer", "big.f90", "-I ."]
       -- cleanup
