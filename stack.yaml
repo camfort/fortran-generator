@@ -17,5 +17,6 @@ extra-deps:
 - crackNum-1.9
 - syz-0.2.0.0
 - FloatingHex-0.4
-- sbv-7.3
+- sbv-7.4
+- pretty-1.1.3.6
 resolver: lts-9.21
