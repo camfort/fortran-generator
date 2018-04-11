@@ -14,7 +14,7 @@ main :: IO ()
 main = do
   -- Header
   putStrLn "#funs   #funLen   #args   single   multi"
-  forM_ [2,3,4] $ \funArgs ->
+  forM_ [2,4] $ \funArgs ->
    forM_ [5,10,15] $ \funs ->
     forM_ [5,10..20] $ \funLen -> do
 
