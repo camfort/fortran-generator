@@ -3,6 +3,7 @@ module Main where
 import System.Process (system)
 import Control.Monad (replicateM)
 import System.Clock
+import StdError
 
 main :: IO ()
 main = do
@@ -13,11 +14,13 @@ main = do
   file4 <- timeProcess "camfort" ["units-compile", "output_mod.f90"]
   file5 <- timeProcess "camfort" ["units-compile", "simulation_mod.f90"]
   fileTop <- timeProcess "camfort" ["units-infer", "navier.f90", "-I ."]
-  putStrLn (show $ file1 + file2 + file3 + file4 + file5 + fileTop)
+  let times = file1 + file2 + file3 + file4 + file5 + fileTop
+  putStrLn (show $ fst times)
+  putStrLn ("+-" ++ (show $ stdError (snd times)))
 
-timeProcess :: String -> [String] -> IO Double
+timeProcess :: String -> [String] -> IO (Double, [Double])
 timeProcess c args =
-   replicateM 3 timing >>= (\times -> return $ sum times / 3.0)
+   replicateM 5 timing >>= (\times -> return $ (sum times / 5.0, times))
   where
    timing = do
      start <- getTime Monotonic
