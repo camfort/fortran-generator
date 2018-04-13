@@ -14,7 +14,7 @@ main = do
 
 timeProcess :: String -> [String] -> IO (Double, [Double])
 timeProcess c args =
-   replicateM 5 timing >>= (\times -> return $ (sum times / 3.0, times))
+   replicateM 5 timing >>= (\times -> return $ (sum times / 5.0, times))
   where
    timing = do
      start <- getTime Monotonic
