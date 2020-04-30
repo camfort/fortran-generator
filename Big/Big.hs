@@ -57,7 +57,7 @@ programs mode name funs funLength funArgs =
     topLevel u = F.ProgramFile meta [u]
     meta       = F.MetaInfo FP.Fortran90 (name ++ ".f90")
     -- contains   = F.PUMain () nullSpan (Just name)
-    contains   = F.PUSubroutine () nullSpan (F.None () nullSpan False) name (Just args)
+    contains   = F.PUSubroutine () nullSpan F.emptyPrefixSuffix name (Just args)
     args       = F.fromList () (map variable [0..funs])
     mainP      = mainProgram funs funArgs
 
@@ -72,7 +72,7 @@ mkModule name n unit
 mkUse :: String -> Int -> F.Block ()
 mkUse name n =
   F.BlStatement () nullSpan Nothing
-    $ F.StUse () nullSpan (variableStr (name ++ show n)) F.Permissive Nothing
+    $ F.StUse () nullSpan (variableStr (name ++ show n)) Nothing F.Permissive Nothing
 
 {- | `mainProgram n k` generates a sequence of blocks (for a program) which
       comprise function calls to functions f1..fn of k-arity with a shared
@@ -94,7 +94,7 @@ function  numArgs funNumber ids =
     F.PUFunction () nullSpan (Just realType) opts name args Nothing body Nothing
   where
     name = "f" ++ show funNumber
-    opts = F.None () nullSpan False
+    opts = F.emptyPrefixSuffix
     -- Arugments of the function
     args = Just (F.fromList () (map variable (take numArgs ids)))
     -- Create the entire body of the function
