@@ -17,7 +17,7 @@ source-repository head
 
 executable eval
   main-is:             Evaluate.hs
-  other-modules:       Big.Big
+  other-modules:       Big.Big, StdError
   build-depends:       base,
                        camfort >= 0.905,
                        fortran-src >= 0.2.0.0,

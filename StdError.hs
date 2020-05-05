@@ -17,6 +17,8 @@ cast :: Int -> Double
 cast = fromInteger . toInteger
 
 stdError :: [Double] -> Double
-stdError xs = (stdDeviation xs) / sqrt (cast n)
+stdError []  = 0
+stdError [_] = 0
+stdError xs  = (stdDeviation xs) / sqrt (cast n)
   where
     n = length xs
